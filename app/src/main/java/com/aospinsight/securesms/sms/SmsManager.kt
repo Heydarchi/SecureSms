@@ -227,4 +227,35 @@ class SmsManager private constructor(private val context: Context) {
         val allMessages = getAllSmsMessages()
         return@withContext allMessages.count { !it.isRead && it.type == SmsType.INBOX }
     }
+    
+    /**
+     * Get the latest messages from each contact (same as getSmsConversations but with explicit naming)
+     */
+    suspend fun getLatestMessagesFromEachContact(): List<SmsConversation> {
+        return getSmsConversations()
+    }
+    
+    /**
+     * Get all messages from a specific contact number
+     */
+    suspend fun getMessagesFromContact(phoneNumber: String): List<SmsMessage> {
+        return getSmsForPhoneNumber(phoneNumber)
+    }
+    
+    /**
+     * Get a specific conversation by phone number
+     */
+    suspend fun getConversation(phoneNumber: String): SmsConversation? = withContext(Dispatchers.IO) {
+        val conversations = getSmsConversations()
+        val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+        return@withContext conversations.find { normalizePhoneNumber(it.phoneNumber) == normalizedPhoneNumber }
+    }
+    
+    /**
+     * Refresh SMS data cache (for future implementation if caching is needed)
+     */
+    suspend fun refreshSmsData(): List<SmsConversation> {
+        Log.d(TAG, "Refreshing SMS data")
+        return getSmsConversations()
+    }
 }

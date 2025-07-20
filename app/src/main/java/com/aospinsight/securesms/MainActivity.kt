@@ -19,19 +19,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.aospinsight.securesms.model.SmsConversation
-import com.aospinsight.securesms.sms.OnSmsReceivedListener
-import com.aospinsight.securesms.sms.SmsManager
-import com.aospinsight.securesms.sms.SmsReceiver
+import com.aospinsight.securesms.service.SmsServiceConnection
+import com.aospinsight.securesms.service.SmsUpdateListener
 import com.aospinsight.securesms.ui.theme.SecureSmsTheme
 import com.aospinsight.securesms.utils.PermissionUtils
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : ComponentActivity(), OnSmsReceivedListener {
+class MainActivity : ComponentActivity(), SmsUpdateListener {
     
-    private lateinit var smsManager: SmsManager
-    private val smsReceiver: SmsReceiver = SmsReceiver()
+    private lateinit var smsServiceConnection: SmsServiceConnection
     
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -39,6 +37,8 @@ class MainActivity : ComponentActivity(), OnSmsReceivedListener {
         val allGranted = permissions.values.all { it }
         if (allGranted) {
             Toast.makeText(this, "SMS permissions granted", Toast.LENGTH_SHORT).show()
+            // Refresh data when permissions are granted
+            refreshSmsData()
         } else {
             Toast.makeText(this, "SMS permissions denied", Toast.LENGTH_LONG).show()
         }
@@ -48,10 +48,21 @@ class MainActivity : ComponentActivity(), OnSmsReceivedListener {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        smsManager = SmsManager.getInstance(this)
+        // Initialize service connection
+        smsServiceConnection = SmsServiceConnection(this)
+        lifecycle.addObserver(smsServiceConnection)
         
-        // Set SMS received listener
-        smsReceiver.setSmsReceivedListener(this)
+        // Bind to service
+        smsServiceConnection.bindService(
+            onConnected = { service ->
+                Log.d("MainActivity", "SMS service connected")
+                service.registerSmsListener(this@MainActivity)
+                refreshSmsData()
+            },
+            onDisconnected = {
+                Log.d("MainActivity", "SMS service disconnected")
+            }
+        )
         
         setContent {
             SecureSmsTheme {
@@ -67,14 +78,21 @@ class MainActivity : ComponentActivity(), OnSmsReceivedListener {
     
     override fun onDestroy() {
         super.onDestroy()
-        smsReceiver.setSmsReceivedListener(null)
+        smsServiceConnection.unregisterSmsListener(this)
+        lifecycle.removeObserver(smsServiceConnection)
     }
     
-    override fun onSmsReceived(phoneNumber: String, message: String, timestamp: Long) {
+    // Implementation of SmsUpdateListener
+    override fun onNewSmsReceived(phoneNumber: String, message: String, timestamp: Long) {
         runOnUiThread {
             Toast.makeText(this, "New SMS from $phoneNumber", Toast.LENGTH_SHORT).show()
             Log.d("MainActivity", "New SMS received from $phoneNumber: $message")
         }
+    }
+    
+    override fun onSmsDataRefreshed() {
+        Log.d("MainActivity", "SMS data refreshed")
+        // The UI will automatically refresh due to the LaunchedEffect in SmsApp
     }
     
     @Composable
@@ -301,11 +319,66 @@ class MainActivity : ComponentActivity(), OnSmsReceivedListener {
     private fun loadConversations(callback: (List<SmsConversation>, String?) -> Unit) {
         lifecycleScope.launch {
             try {
-                val conversations = smsManager.getSmsConversations()
-                callback(conversations, null)
+                val conversations = smsServiceConnection.getLatestMessagesFromEachContact()
+                if (conversations != null) {
+                    callback(conversations, null)
+                } else {
+                    callback(emptyList(), "SMS service not available")
+                }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error loading conversations", e)
                 callback(emptyList(), "Error loading SMS: ${e.message}")
+            }
+        }
+    }
+    
+    private fun refreshSmsData() {
+        lifecycleScope.launch {
+            try {
+                smsServiceConnection.refreshSmsData()
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error refreshing SMS data", e)
+            }
+        }
+    }
+    
+    /**
+     * Example method showing how to get messages from a specific contact
+     */
+    private fun getMessagesFromSpecificContact(phoneNumber: String) {
+        lifecycleScope.launch {
+            try {
+                val messages = smsServiceConnection.getMessagesFromContact(phoneNumber)
+                if (messages != null) {
+                    Log.d("MainActivity", "Found ${messages.size} messages from $phoneNumber")
+                    messages.forEach { message ->
+                        Log.d("MainActivity", "Message: ${message.message} at ${message.timestamp}")
+                    }
+                } else {
+                    Log.w("MainActivity", "Could not get messages from $phoneNumber - service not available")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error getting messages from $phoneNumber", e)
+            }
+        }
+    }
+    
+    /**
+     * Example method showing how to get a specific conversation
+     */
+    private fun getSpecificConversation(phoneNumber: String) {
+        lifecycleScope.launch {
+            try {
+                val conversation = smsServiceConnection.getConversation(phoneNumber)
+                if (conversation != null) {
+                    Log.d("MainActivity", "Conversation with $phoneNumber has ${conversation.messageCount} messages")
+                    Log.d("MainActivity", "Last message: ${conversation.lastMessage?.message}")
+                    Log.d("MainActivity", "Unread count: ${conversation.unreadCount}")
+                } else {
+                    Log.w("MainActivity", "No conversation found with $phoneNumber")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error getting conversation with $phoneNumber", e)
             }
         }
     }
