@@ -3,40 +3,69 @@ package com.aospinsight.securesms.service
 import android.os.Binder
 import com.aospinsight.securesms.model.SmsConversation
 import com.aospinsight.securesms.model.SmsMessage
+import com.aospinsight.securesms.sms.SmsManager
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Binder class that provides access to SmsManagerService
+ * Binder class that provides access to SMS functionality through SmsManager
  */
-class SmsManagerBinder(private val service: SmsManagerService) : Binder(), ISmsManagerService {
+class SmsManagerBinder(
+    private val smsManager: SmsManager) : Binder(), ISmsManagerService {
+    
+    // List to hold SMS update listeners
+    private val smsListeners = CopyOnWriteArrayList<SmsUpdateListener>()
     
     override suspend fun getLatestMessagesFromEachContact(): List<SmsConversation> {
-        return service.getLatestMessagesFromEachContact()
+        return smsManager.getLatestMessagesFromEachContact()
     }
     
     override suspend fun getMessagesFromContact(phoneNumber: String): List<SmsMessage> {
-        return service.getMessagesFromContact(phoneNumber)
+        return smsManager.getMessagesFromContact(phoneNumber)
     }
     
     override suspend fun getConversation(phoneNumber: String): SmsConversation? {
-        return service.getConversation(phoneNumber)
+        return smsManager.getConversation(phoneNumber)
     }
     
     override suspend fun refreshSmsData() {
-        service.refreshSmsData()
+        smsManager.refreshSmsData()
+        // Notify listeners about data refresh
+        notifyDataRefreshed()
     }
     
     override fun registerSmsListener(listener: SmsUpdateListener) {
-        service.registerSmsListener(listener)
+        if (!smsListeners.contains(listener)) {
+            smsListeners.add(listener)
+        }
     }
     
     override fun unregisterSmsListener(listener: SmsUpdateListener) {
-        service.unregisterSmsListener(listener)
+        smsListeners.remove(listener)
     }
     
     /**
-     * Get the service instance
+     * Notify listeners about new SMS received
      */
-    fun getService(): SmsManagerService {
-        return service
+    fun notifyNewSmsReceived(phoneNumber: String, message: String, timestamp: Long) {
+        smsListeners.forEach { listener ->
+            try {
+                listener.onNewSmsReceived(phoneNumber, message, timestamp)
+            } catch (e: Exception) {
+                // Log error but continue with other listeners
+            }
+        }
+    }
+    
+    /**
+     * Notify listeners about data refresh
+     */
+    fun notifyDataRefreshed() {
+        smsListeners.forEach { listener ->
+            try {
+                listener.onSmsDataRefreshed()
+            } catch (e: Exception) {
+                // Log error but continue with other listeners
+            }
+        }
     }
 }
