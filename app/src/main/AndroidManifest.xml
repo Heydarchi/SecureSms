@@ -5,9 +5,7 @@
     <!-- SMS Permissions -->
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    
-    <!-- Contacts Permission for contact names -->
+    <uses-permission android:name="android.permission.SEND_SMS" /> <!-- Contacts Permission for contact names -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
@@ -20,6 +18,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SecureSms"
         tools:targetApi="31">
+        <service
+            android:name=".service.SmsManagerService"
+            android:enabled="true"
+            android:exported="false"></service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,9 +33,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- SMS Broadcast Receiver -->
+        </activity> <!-- SMS Broadcast Receiver -->
         <receiver
             android:name=".sms.SmsReceiver"
             android:exported="true"

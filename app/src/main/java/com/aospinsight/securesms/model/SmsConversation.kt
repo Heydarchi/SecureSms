@@ -1,8 +1,6 @@
 package com.aospinsight.securesms.model
 
-/**
- * Data class representing SMS messages categorized by phone number
- */
+
 data class SmsConversation(
     val phoneNumber: String,
     val displayName: String? = null,

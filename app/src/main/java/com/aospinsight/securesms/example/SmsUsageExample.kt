@@ -2,6 +2,7 @@ package com.aospinsight.securesms.example
 
 import android.content.Context
 import android.util.Log
+import com.aospinsight.securesms.sms.OnSmsReceivedListener
 import com.aospinsight.securesms.sms.SmsManager
 import com.aospinsight.securesms.sms.SmsReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -11,14 +12,15 @@ import kotlinx.coroutines.launch
 /**
  * Example class demonstrating how to use the SMS functionality
  */
-class SmsUsageExample(private val context: Context) : SmsReceiver.Companion.OnSmsReceivedListener {
+class SmsUsageExample(private val context: Context) : OnSmsReceivedListener {
     
     private val smsManager = SmsManager.getInstance(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    
+    private val smsReceiver = SmsReceiver()
+
     init {
         // Set up the SMS receiver listener
-        SmsReceiver.setSmsReceivedListener(this)
+        smsReceiver.setSmsReceivedListener(this)
     }
     
     /**
@@ -117,7 +119,7 @@ class SmsUsageExample(private val context: Context) : SmsReceiver.Companion.OnSm
      * Clean up resources
      */
     fun cleanup() {
-        SmsReceiver.setSmsReceivedListener(null)
+        smsReceiver.setSmsReceivedListener(null)
     }
 }
 

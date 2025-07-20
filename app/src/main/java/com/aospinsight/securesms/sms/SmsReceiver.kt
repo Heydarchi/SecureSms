@@ -6,29 +6,20 @@ import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SmsMessage
 import android.util.Log
-import com.aospinsight.securesms.model.SmsType
 
 /**
  * BroadcastReceiver to handle incoming SMS messages
  */
 class SmsReceiver : BroadcastReceiver() {
     
-    companion object {
-        private const val TAG = "SmsReceiver"
-        
-        // Interface for SMS received callback
-        interface OnSmsReceivedListener {
-            fun onSmsReceived(phoneNumber: String, message: String, timestamp: Long)
-        }
-        
-        // Static listener for receiving SMS callbacks
-        private var smsReceivedListener: OnSmsReceivedListener? = null
-        
-        fun setSmsReceivedListener(listener: OnSmsReceivedListener?) {
-            smsReceivedListener = listener
-        }
+    private val TAG = "SmsReceiver"
+
+    private var smsReceivedListener: OnSmsReceivedListener? = null
+
+    fun setSmsReceivedListener(listener: OnSmsReceivedListener?) {
+        smsReceivedListener = listener
     }
-    
+
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "SMS received")
         

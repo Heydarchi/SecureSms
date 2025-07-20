@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -31,8 +32,16 @@ object PermissionUtils {
     }
     
     /**
-     * Request SMS permissions
+     * Request SMS permissions using new ActivityResultLauncher
      */
+    fun requestSmsPermissions(activity: Activity, launcher: ActivityResultLauncher<Array<String>>) {
+        launcher.launch(SMS_PERMISSIONS)
+    }
+    
+    /**
+     * Request SMS permissions using deprecated method (kept for compatibility)
+     */
+    @Deprecated("Use requestSmsPermissions with ActivityResultLauncher instead")
     fun requestSmsPermissions(activity: Activity) {
         ActivityCompat.requestPermissions(
             activity,

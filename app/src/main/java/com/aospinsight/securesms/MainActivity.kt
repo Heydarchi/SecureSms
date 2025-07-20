@@ -1,12 +1,12 @@
 package com.aospinsight.securesms
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.aospinsight.securesms.model.SmsConversation
+import com.aospinsight.securesms.sms.OnSmsReceivedListener
 import com.aospinsight.securesms.sms.SmsManager
 import com.aospinsight.securesms.sms.SmsReceiver
 import com.aospinsight.securesms.ui.theme.SecureSmsTheme
@@ -27,9 +28,21 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedListener {
+class MainActivity : ComponentActivity(), OnSmsReceivedListener {
     
     private lateinit var smsManager: SmsManager
+    private val smsReceiver: SmsReceiver = SmsReceiver()
+    
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            Toast.makeText(this, "SMS permissions granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "SMS permissions denied", Toast.LENGTH_LONG).show()
+        }
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +51,7 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
         smsManager = SmsManager.getInstance(this)
         
         // Set SMS received listener
-        SmsReceiver.setSmsReceivedListener(this)
+        smsReceiver.setSmsReceivedListener(this)
         
         setContent {
             SecureSmsTheme {
@@ -48,13 +61,13 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
         
         // Check permissions on startup
         if (!PermissionUtils.hasSmsPermissions(this)) {
-            PermissionUtils.requestSmsPermissions(this)
+            PermissionUtils.requestSmsPermissions(this, requestPermissionLauncher)
         }
     }
     
     override fun onDestroy() {
         super.onDestroy()
-        SmsReceiver.setSmsReceivedListener(null)
+        smsReceiver.setSmsReceivedListener(null)
     }
     
     override fun onSmsReceived(phoneNumber: String, message: String, timestamp: Long) {
@@ -62,25 +75,6 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
             Toast.makeText(this, "New SMS from $phoneNumber", Toast.LENGTH_SHORT).show()
             Log.d("MainActivity", "New SMS received from $phoneNumber: $message")
         }
-    }
-    
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        PermissionUtils.handlePermissionResult(
-            requestCode = requestCode,
-            permissions = permissions,
-            grantResults = grantResults,
-            onPermissionGranted = {
-                Toast.makeText(this, "SMS permissions granted", Toast.LENGTH_SHORT).show()
-            },
-            onPermissionDenied = {
-                Toast.makeText(this, "SMS permissions denied", Toast.LENGTH_LONG).show()
-            }
-        )
     }
     
     @Composable
@@ -101,6 +95,7 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
+                @OptIn(ExperimentalMaterial3Api::class)
                 TopAppBar(
                     title = { Text("Secure SMS") },
                     actions = {
@@ -174,7 +169,7 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { PermissionUtils.requestSmsPermissions(this@MainActivity) },
+                    onClick = { PermissionUtils.requestSmsPermissions(this@MainActivity, requestPermissionLauncher) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Grant Permissions")
@@ -276,6 +271,7 @@ class MainActivity : ComponentActivity(), SmsReceiver.Companion.OnSmsReceivedLis
                         )
                         if (conversation.unreadCount > 0) {
                             Spacer(modifier = Modifier.height(4.dp))
+                            @OptIn(ExperimentalMaterial3Api::class)
                             Badge {
                                 Text(conversation.unreadCount.toString())
                             }
