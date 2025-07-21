@@ -2,9 +2,9 @@ package com.aospinsight.securesms.example
 
 import android.content.Context
 import android.util.Log
-import com.aospinsight.securesms.sms.OnSmsReceivedListener
+import com.aospinsight.securesms.broadcastreceiver.ISmsReceivedListener
 import com.aospinsight.securesms.sms.SmsManager
-import com.aospinsight.securesms.sms.SmsReceiver
+import com.aospinsight.securesms.broadcastreceiver.SmsReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 /**
  * Example class demonstrating how to use the SMS functionality
  */
-class SmsUsageExample(private val context: Context) : OnSmsReceivedListener {
+class SmsUsageExample(private val context: Context) : ISmsReceivedListener {
     
     private val smsManager = SmsManager.getInstance(context)
     private val coroutineScope = CoroutineScope(Dispatchers.Main)

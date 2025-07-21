@@ -6,21 +6,23 @@ import android.os.IBinder
 import android.util.Log
 import com.aospinsight.securesms.model.SmsConversation
 import com.aospinsight.securesms.model.SmsMessage
-import com.aospinsight.securesms.sms.OnSmsReceivedListener
+import com.aospinsight.securesms.broadcastreceiver.ISmsReceivedListener
 import com.aospinsight.securesms.sms.SmsManager
-import com.aospinsight.securesms.sms.SmsReceiver
+import com.aospinsight.securesms.broadcastreceiver.SmsReceiver
+import com.aospinsight.securesms.repository.SmsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 
-class SmsManagerService : Service(), OnSmsReceivedListener {
+class SmsManagerService : Service(), ISmsReceivedListener {
     
     private companion object {
         const val TAG = "SmsManagerService"
     }
-    
+
+    private lateinit var smsRepository: SmsRepository
     private lateinit var smsManager: SmsManager
     private lateinit var binder: SmsManagerBinder
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -35,6 +37,7 @@ class SmsManagerService : Service(), OnSmsReceivedListener {
     override fun onCreate() {
         super.onCreate()
         smsManager = SmsManager.getInstance(this)
+        smsRepository = SmsRepository(smsManager)
         binder = SmsManagerBinder(smsManager)
         
         // Set SMS received listener

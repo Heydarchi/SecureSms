@@ -7,22 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Repository class for managing SMS data
- */
-class SmsRepository private constructor(private val smsManager: SmsManager) {
-    
-    companion object {
-        @Volatile
-        private var INSTANCE: SmsRepository? = null
-        
-        fun getInstance(smsManager: SmsManager): SmsRepository {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: SmsRepository(smsManager).also { INSTANCE = it }
-            }
-        }
-    }
-    
+class SmsRepository internal constructor(private val smsManager: SmsManager) {
+
     private val _conversations = MutableStateFlow<List<SmsConversation>>(emptyList())
     val conversations: Flow<List<SmsConversation>> = _conversations.asStateFlow()
     
