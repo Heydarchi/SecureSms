@@ -1,17 +1,14 @@
 package com.aospinsight.securesms.repository
 
 import android.content.ContentResolver
-import android.content.Context
 import android.database.Cursor
-import android.net.Uri
 import android.provider.Telephony
-import com.aospinsight.securesms.model.SmsMessage
 import com.aospinsight.securesms.model.SmsType
+import com.aospinsight.securesms.sms.SmsManager
 import com.google.common.truth.Truth.assertThat
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -20,21 +17,18 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SmsRepositoryTest {
 
-    private lateinit var mockContext: Context
+    private lateinit var mockSmsManager: SmsManager
     private lateinit var mockContentResolver: ContentResolver
     private lateinit var mockCursor: Cursor
     private lateinit var smsRepository: SmsRepository
-    private val testDispatcher = TestCoroutineDispatcher()
 
     @Before
     fun setup() {
-        mockContext = mockk()
+        mockSmsManager = mockk<SmsManager>()
         mockContentResolver = mockk()
         mockCursor = mockk()
-        
-        every { mockContext.contentResolver } returns mockContentResolver
-        
-        smsRepository = SmsRepository(mockContext, testDispatcher)
+
+        smsRepository = SmsRepository(mockSmsManager)
     }
 
     @After
@@ -207,9 +201,9 @@ class SmsRepositoryTest {
         smsRepository.refresh()
 
         // Then
-        val conversations = smsRepository.conversationsFlow.first()
+        val conversations = smsRepository.getAllConversations()
         assertThat(conversations).hasSize(1)
-        assertThat(conversations[0].phoneNumber).isEqualTo("+1234567890")
+        assertThat(conversations [0].phoneNumber).isEqualTo("+1234567890")
     }
 
     @Test
@@ -218,7 +212,7 @@ class SmsRepositoryTest {
         setupEmptyCursor()
         every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
         
-        val initialConversations = smsRepository.conversationsFlow.first()
+        val initialConversations = smsRepository.conversations.first()
         assertThat(initialConversations).isEmpty()
 
         // When - add data and refresh
@@ -229,7 +223,7 @@ class SmsRepositoryTest {
         smsRepository.refresh()
 
         // Then
-        val updatedConversations = smsRepository.conversationsFlow.first()
+        val updatedConversations = smsRepository.conversations.first()
         assertThat(updatedConversations).hasSize(1)
     }
 
