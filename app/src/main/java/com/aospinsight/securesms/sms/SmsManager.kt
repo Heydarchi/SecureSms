@@ -18,21 +18,11 @@ import kotlinx.coroutines.withContext
 /**
  * Manager class for handling SMS operations including fetching and categorizing messages
  */
-class SmsManager private constructor(private val context: Context) {
-    
-    companion object {
-        private const val TAG = "SmsManager"
+class SmsManager internal constructor(private val context: Context) {
+
+    private val TAG = "SmsManager"
         
-        @Volatile
-        private var INSTANCE: SmsManager? = null
-        
-        fun getInstance(context: Context): SmsManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: SmsManager(context.applicationContext).also { INSTANCE = it }
-            }
-        }
-    }
-    
+
     /**
      * Check if SMS permissions are granted
      */
@@ -197,7 +187,7 @@ class SmsManager private constructor(private val context: Context) {
     /**
      * Normalize phone number for consistent comparison
      */
-    private fun normalizePhoneNumber(phoneNumber: String): String {
+    fun normalizePhoneNumber(phoneNumber: String): String {
         return phoneNumber.replace(Regex("[^\\d+]"), "")
             .let { cleaned ->
                 when {
@@ -242,14 +232,7 @@ class SmsManager private constructor(private val context: Context) {
         return getSmsForPhoneNumber(phoneNumber)
     }
     
-    /**
-     * Get a specific conversation by phone number
-     */
-    suspend fun getConversation(phoneNumber: String): SmsConversation? = withContext(Dispatchers.IO) {
-        val conversations = getSmsConversations()
-        val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
-        return@withContext conversations.find { normalizePhoneNumber(it.phoneNumber) == normalizedPhoneNumber }
-    }
+
     
     /**
      * Refresh SMS data cache (for future implementation if caching is needed)

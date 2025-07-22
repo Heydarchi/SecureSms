@@ -31,14 +31,12 @@ class SmsManagerService : Service(), ISmsReceivedListener {
     // List to hold SMS update listeners (keeping for backward compatibility with service-level listeners)
     private val smsListeners = CopyOnWriteArrayList<SmsUpdateListener>()
     
-    // Cache for conversations
-    private var cachedConversations: List<SmsConversation> = emptyList()
 
     override fun onCreate() {
         super.onCreate()
-        smsManager = SmsManager.getInstance(this)
+        smsManager = SmsManager(this)
         smsRepository = SmsRepository(smsManager)
-        binder = SmsManagerBinder(smsManager)
+        binder = SmsManagerBinder(smsRepository)
         
         // Set SMS received listener
         smsReceiver.setSmsReceivedListener(this)
