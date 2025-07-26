@@ -70,6 +70,8 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.5")
     testImplementation("com.google.truth:truth:1.1.3")
     testImplementation("org.robolectric:robolectric:4.10.3")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test.ext:junit:1.1.5")
     
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

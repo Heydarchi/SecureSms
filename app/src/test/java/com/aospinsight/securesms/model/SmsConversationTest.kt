@@ -15,7 +15,7 @@ class SmsConversationTest {
     ) = SmsMessage(id, phoneNumber, message, timestamp, type, isRead)
 
     @Test
-    fun `create SmsConversation with valid data`() {
+    fun givenValidData_whenCreateSmsConversation_thenReturnConversationWithCorrectProperties() {
         // Given
         val phoneNumber = "+1234567890"
         val displayName = "John Doe"
@@ -44,7 +44,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns displayName when not blank`() {
+    fun givenNonBlankDisplayName_whenAccessingDisplayPhoneNumber_thenReturnDisplayName() {
         // Given
         val phoneNumber = "+1234567890"
         val displayName = "John Doe"
@@ -64,7 +64,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns phoneNumber when displayName is null`() {
+    fun givenNullDisplayName_whenAccessingDisplayPhoneNumber_thenReturnPhoneNumber() {
         // Given
         val phoneNumber = "+1234567890"
         val conversation = SmsConversation(
@@ -83,7 +83,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns phoneNumber when displayName is blank`() {
+    fun givenBlankDisplayName_whenAccessingDisplayPhoneNumber_thenReturnPhoneNumber() {
         // Given
         val phoneNumber = "+1234567890"
         val conversation = SmsConversation(
@@ -102,7 +102,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns Unknown when phoneNumber is also blank`() {
+    fun givenBlankPhoneNumberAndNullDisplayName_whenAccessingDisplayPhoneNumber_thenReturnUnknown() {
         // Given
         val conversation = SmsConversation(
             phoneNumber = "",
@@ -120,7 +120,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `lastMessage returns message with latest timestamp`() {
+    fun givenMultipleMessages_whenAccessingLastMessage_thenReturnMessageWithLatestTimestamp() {
         // Given
         val messages = listOf(
             createTestSmsMessage(1L, timestamp = 1000L, message = "First"),
@@ -145,7 +145,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `lastMessage returns null when messages list is empty`() {
+    fun givenEmptyMessagesList_whenAccessingLastMessage_thenReturnNull() {
         // Given
         val conversation = SmsConversation(
             phoneNumber = "+1234567890",
@@ -163,7 +163,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `messageCount returns correct count`() {
+    fun givenMultipleMessages_whenAccessingMessageCount_thenReturnCorrectCount() {
         // Given
         val messages = listOf(
             createTestSmsMessage(1L),
@@ -186,7 +186,7 @@ class SmsConversationTest {
     }
 
     @Test
-    fun `messageCount returns zero when messages list is empty`() {
+    fun givenEmptyMessagesList_whenAccessingMessageCount_thenReturnZero() {
         // Given
         val conversation = SmsConversation(
             phoneNumber = "+1234567890",

@@ -71,7 +71,7 @@ class SmsManagerTest {
     )
 
     @Test
-    suspend fun `getAllMessages returns all SMS messages`() {
+    suspend fun givenTestMessages_whenGetAllSmsMessages_thenReturnAllMessages() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1234567890", "Hello", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
@@ -95,7 +95,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getAllMessages returns empty list when no messages`() {
+    suspend fun givenEmptyCursor_whenGetAllSmsMessages_thenReturnEmptyList() {
         // Given
         setupEmptyCursor()
         every { mockContext.contentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
@@ -108,7 +108,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getAllMessages handles null cursor gracefully`() {
+    suspend fun givenNullCursor_whenGetAllSmsMessages_thenHandleGracefully() {
         // Given
         every { mockContext.contentResolver.query(any(), any(), any(), any(), any()) } returns null
 
@@ -120,7 +120,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getMessagesForContact returns filtered messages`() {
+    suspend fun givenTargetPhoneNumber_whenGetMessagesFromContact_thenReturnFilteredMessages() {
         // Given
         val targetPhoneNumber = "+1234567890"
         val testMessages = listOf(
@@ -143,7 +143,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getMessagesForContact returns empty list when no matches`() {
+    suspend fun givenNoMatchingMessages_whenGetMessagesFromContact_thenReturnEmptyList() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1111111111", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true)
@@ -160,7 +160,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getLatestMessageFromEachContact returns one message per contact`() {
+    suspend fun givenMultipleContacts_whenGetLatestMessagesFromEachContact_thenReturnOneMessagePerContact() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1234567890", "Older", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
@@ -185,7 +185,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getLatestMessageFromEachContact returns empty list when no messages`() {
+    suspend fun givenNoMessages_whenGetLatestMessagesFromEachContact_thenReturnEmptyList() {
         // Given
         setupEmptyCursor()
         every { mockContext.contentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
@@ -198,7 +198,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `SMS type conversion handles all known types`() {
+    suspend fun givenAllSmsTypes_whenGetAllSmsMessages_thenHandleTypeConversionCorrectly() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1234567890", "Inbox", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
@@ -228,7 +228,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `SMS read status conversion works correctly`() {
+    suspend fun givenReadAndUnreadMessages_whenGetAllSmsMessages_thenHandleReadStatusCorrectly() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1234567890", "Read", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
@@ -248,7 +248,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `SmsManager handles cursor reading exceptions gracefully`() {
+    suspend fun givenCursorError_whenGetAllSmsMessages_thenHandleExceptionGracefully() {
         // Given
         every { mockContext.contentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
         every { mockCursor.moveToNext() } throws IllegalStateException("Cursor error")
@@ -263,7 +263,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `SmsManager handles security exceptions gracefully`() {
+    suspend fun givenSecurityException_whenGetAllSmsMessages_thenHandleExceptionGracefully() {
         // Given
         every { mockContext.contentResolver.query(any(), any(), any(), any(), any()) } throws SecurityException("No permission")
 
@@ -275,7 +275,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getMessagesForContact handles empty phone number`() {
+    suspend fun givenEmptyPhoneNumber_whenGetMessagesFromContact_thenReturnEmptyList() {
         // When
         val messages = smsManager.getMessagesFromContact("")
 
@@ -284,7 +284,7 @@ class SmsManagerTest {
     }
 
     @Test
-    suspend fun `getAllMessages orders messages by date descending`() {
+    suspend fun givenTestMessages_whenGetAllSmsMessages_thenOrderByDateDescending() {
         // Given
         val testMessages = listOf(
             TestMessage(1L, "+1234567890", "First", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),

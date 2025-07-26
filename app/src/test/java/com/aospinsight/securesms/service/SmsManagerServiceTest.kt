@@ -31,7 +31,7 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `onBind returns SmsManagerBinder instance`() {
+    fun givenMockIntent_whenOnBind_thenReturnSmsManagerBinderInstance() {
         // Given
         val mockIntent = mockk<Intent>()
 
@@ -44,7 +44,7 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `onBind returns same binder instance on multiple calls`() {
+    fun givenMultipleCalls_whenOnBind_thenReturnSameBinderInstance() {
         // Given
         val mockIntent = mockk<Intent>()
 
@@ -57,14 +57,14 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `service lifecycle methods complete without errors`() {
+    fun givenServiceLifecycle_whenCreateAndDestroy_thenCompleteWithoutErrors() {
         // When & Then - these should not throw exceptions
         smsManagerService.onCreate()
         smsManagerService.onDestroy()
     }
 
     @Test
-    fun `binder is SmsManagerBinder with correct repository`() {
+    fun givenService_whenGetBinder_thenReturnSmsManagerBinderWithCorrectRepository() {
         // Given
         val mockIntent = mockk<Intent>()
 
@@ -81,7 +81,7 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `service handles multiple bind and unbind operations`() {
+    fun givenMultipleBindUnbindOperations_whenCalled_thenHandleCorrectly() {
         // Given
         val mockIntent = mockk<Intent>()
 
@@ -100,7 +100,7 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `service handles onStartCommand correctly`() {
+    fun givenMockIntent_whenOnStartCommand_thenReturnStartNotSticky() {
         // Given
         val mockIntent = mockk<Intent>()
         val flags = 0
@@ -114,7 +114,7 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `service handles null intent in onBind gracefully`() {
+    fun givenValidIntent_whenOnBind_thenReturnSmsManagerBinder() {
         // When
         val intent : Intent = Intent()
         val binder = smsManagerService.onBind(intent)
@@ -125,14 +125,14 @@ class SmsManagerServiceTest {
     }
 
     @Test
-    fun `service handles null intent in onUnbind gracefully`() {
+    fun givenNullIntent_whenOnUnbind_thenReturnFalseGracefully() {
         // When & Then - should not throw
         val result = smsManagerService.onUnbind(null)
         assertThat(result).isFalse()
     }
 
     @Test
-    fun `service handles null intent in onStartCommand gracefully`() {
+    fun givenNullIntent_whenOnStartCommand_thenReturnStartNotSticky() {
         // When
         val result = smsManagerService.onStartCommand(null, 0, 1)
 

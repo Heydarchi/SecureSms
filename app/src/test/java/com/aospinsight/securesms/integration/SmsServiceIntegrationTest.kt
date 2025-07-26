@@ -86,7 +86,7 @@ class SmsServiceIntegrationTest {
     }
 
     @Test
-    fun `complete service binding and data retrieval flow works`() = runTest {
+    fun givenMockRepositoryWithConversations_whenCompleteServiceBindingAndDataRetrieval_thenFlowWorksCorrectly() = runTest {
         // Given
         val expectedConversations = listOf(
             createTestConversation("+1234567890", "John Doe"),

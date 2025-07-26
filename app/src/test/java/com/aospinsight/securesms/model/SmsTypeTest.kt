@@ -6,7 +6,7 @@ import org.junit.Test
 class SmsTypeTest {
 
     @Test
-    fun `all SmsType values have correct int values`() {
+    fun givenAllSmsTypeValues_whenCheckingIntValues_thenReturnCorrectValues() {
         assertThat(SmsType.INBOX.value).isEqualTo(1)
         assertThat(SmsType.SENT.value).isEqualTo(2)
         assertThat(SmsType.DRAFT.value).isEqualTo(3)
@@ -16,7 +16,7 @@ class SmsTypeTest {
     }
 
     @Test
-    fun `fromValue returns correct SmsType for valid values`() {
+    fun givenValidValues_whenCallingFromValue_thenReturnCorrectSmsType() {
         assertThat(SmsType.fromValue(1)).isEqualTo(SmsType.INBOX)
         assertThat(SmsType.fromValue(2)).isEqualTo(SmsType.SENT)
         assertThat(SmsType.fromValue(3)).isEqualTo(SmsType.DRAFT)
@@ -26,7 +26,7 @@ class SmsTypeTest {
     }
 
     @Test
-    fun `fromValue returns INBOX for invalid values`() {
+    fun givenInvalidValues_whenCallingFromValue_thenReturnInboxAsDefault() {
         assertThat(SmsType.fromValue(0)).isEqualTo(SmsType.INBOX)
         assertThat(SmsType.fromValue(7)).isEqualTo(SmsType.INBOX)
         assertThat(SmsType.fromValue(-1)).isEqualTo(SmsType.INBOX)
@@ -34,7 +34,7 @@ class SmsTypeTest {
     }
 
     @Test
-    fun `all enum values are present`() {
+    fun givenSmsTypeEnum_whenCheckingAllValues_thenReturnAllExpectedValues() {
         val values = SmsType.values()
         assertThat(values).hasLength(6)
         assertThat(values).asList().containsExactly(

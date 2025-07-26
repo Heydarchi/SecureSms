@@ -7,7 +7,7 @@ import java.util.*
 class SmsMessageTest {
 
     @Test
-    fun `create SmsMessage with valid data`() {
+    fun givenValidData_whenCreateSmsMessage_thenReturnSmsMessageWithCorrectProperties() {
         // Given
         val id = 1L
         val phoneNumber = "+1234567890"
@@ -36,7 +36,7 @@ class SmsMessageTest {
     }
 
     @Test
-    fun `date property returns correct Date object`() {
+    fun givenTimestamp_whenAccessingDateProperty_thenReturnCorrectDateObject() {
         // Given
         val timestamp = 1640995200000L // Jan 1, 2022 00:00:00 UTC
         val smsMessage = SmsMessage(
@@ -55,7 +55,7 @@ class SmsMessageTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns phone number when not blank`() {
+    fun givenNonBlankPhoneNumber_whenAccessingDisplayPhoneNumber_thenReturnPhoneNumber() {
         // Given
         val phoneNumber = "+1234567890"
         val smsMessage = SmsMessage(
@@ -74,7 +74,7 @@ class SmsMessageTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns Unknown when phone number is blank`() {
+    fun givenBlankPhoneNumber_whenAccessingDisplayPhoneNumber_thenReturnUnknown() {
         // Given
         val smsMessage = SmsMessage(
             id = 1L,
@@ -92,7 +92,7 @@ class SmsMessageTest {
     }
 
     @Test
-    fun `displayPhoneNumber returns Unknown when phone number is whitespace`() {
+    fun givenWhitespacePhoneNumber_whenAccessingDisplayPhoneNumber_thenReturnUnknown() {
         // Given
         val smsMessage = SmsMessage(
             id = 1L,
@@ -110,7 +110,7 @@ class SmsMessageTest {
     }
 
     @Test
-    fun `two SmsMessage objects with same data are equal`() {
+    fun givenTwoSmsMessagesWithSameData_whenComparing_thenReturnEqual() {
         // Given
         val id = 1L
         val phoneNumber = "+1234567890"

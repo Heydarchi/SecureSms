@@ -78,7 +78,7 @@ class SmsRepositoryTest {
     )
 
     @Test
-    fun `getAllConversations returns conversations grouped by phone number`() = runTest {
+    fun givenMultipleMessages_whenGetAllConversations_thenReturnConversationsGroupedByPhoneNumber() = runTest {
         // Given
         val testMessages = listOf(
             TestSmsData(1L, "+1234567890", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
@@ -107,7 +107,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `getAllConversations returns empty list when no messages`() = runTest {
+    fun givenEmptyCursor_whenGetAllConversations_thenReturnEmptyList() = runTest {
         // Given
         setupEmptyCursor()
         every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
@@ -120,7 +120,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `getAllConversations handles null cursor gracefully`() = runTest {
+    fun givenNullCursor_whenGetAllConversations_thenHandleGracefullyAndReturnEmpty() = runTest {
         // Given
         every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns null
 
@@ -132,7 +132,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `getMessagesForPhoneNumber returns filtered messages`() = runTest {
+    fun givenSpecificPhoneNumber_whenGetMessagesForPhoneNumber_thenReturnFilteredMessages() = runTest {
         // Given
         val phoneNumber = "+1234567890"
         val testMessages = listOf(
@@ -153,7 +153,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `getConversation returns conversation for specific phone number`() = runTest {
+    fun givenSpecificPhoneNumber_whenGetConversation_thenReturnConversationForThatNumber() = runTest {
         // Given
         val phoneNumber = "+1234567890"
         val testMessages = listOf(
@@ -174,7 +174,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `getConversation returns null when phone number has no messages`() = runTest {
+    fun givenPhoneNumberWithNoMessages_whenGetConversation_thenReturnNull() = runTest {
         // Given
         val phoneNumber = "+1234567890"
         setupEmptyCursor()
@@ -188,7 +188,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `refresh updates conversations flow`() = runTest {
+    fun givenUpdatedData_whenRefresh_thenUpdateConversationsFlow() = runTest {
         // Given
         val testMessages = listOf(
             TestSmsData(1L, "+1234567890", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true)
@@ -207,7 +207,7 @@ class SmsRepositoryTest {
     }
 
     @Test
-    fun `conversationsFlow emits updated data after refresh`() = runTest {
+    fun givenInitialEmptyState_whenDataUpdatedAndRefresh_thenConversationsFlowEmitsUpdatedData() = runTest {
         // Given - initial empty state
         setupEmptyCursor()
         every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
