@@ -1,0 +1,104 @@
+@startuml SecureSMS Components
+!theme aws-orange
+
+title SecureSMS - Component Architecture
+
+package "Android Framework" {
+    [Android SMS Provider] as SmsProvider
+    [Telephony Manager] as Telephony
+    [Broadcast Manager] as Broadcast
+}
+
+package "SecureSMS Application" {
+    
+    package "Presentation Layer" {
+        [MainActivity] as UI
+        [Jetpack Compose UI] as ComposeUI
+        UI --> ComposeUI : renders
+    }
+    
+    package "Service Layer" {
+        [SmsManagerService] as Service
+        [SmsManagerBinder] as Binder
+        [SmsServiceConnection] as Connection
+        [SmsUpdateListener] as Listener
+        
+        Service --> Binder : creates
+        Connection --> Service : binds to
+        Service ..> Listener : implements
+        Binder ..> Listener : manages
+    }
+    
+    package "Repository Layer" {
+        [SmsRepository] as Repository
+        Repository : + StateFlow<List<SmsConversation>>
+        Repository : + StateFlow<Boolean> isLoading
+        Repository : + StateFlow<String?> error
+    }
+    
+    package "Data Access Layer" {
+        [SmsManager] as DataManager
+        DataManager : + hasPermissions(): Boolean
+        DataManager : + getAllSmsMessages(): List<SmsMessage>
+        DataManager : + getSmsConversations(): List<SmsConversation>
+    }
+    
+    package "Broadcast Layer" {
+        [SmsReceiver] as Receiver
+        [ISmsReceivedListener] as ReceiverListener
+        
+        Receiver ..> ReceiverListener : implements
+    }
+    
+    package "Model Layer" {
+        [SmsMessage] as Message
+        [SmsConversation] as Conversation
+        [SmsType] as Type
+        
+        Conversation --> Message : contains
+        Message --> Type : has type
+    }
+    
+    package "Utils Layer" {
+        [PermissionUtils] as Permissions
+    }
+}
+
+' Connections between layers
+UI --> Connection : uses
+UI --> Permissions : checks permissions
+UI ..> Listener : implements
+
+Connection --> Binder : receives from service
+Service --> Repository : uses
+Repository --> DataManager : delegates to
+DataManager --> SmsProvider : queries
+
+Receiver --> Broadcast : receives from
+Receiver --> Service : notifies
+
+Service --> ReceiverListener : implements
+Binder --> Repository : delegates to
+
+' External connections
+DataManager --> SmsProvider : ContentResolver.query()
+Receiver <-- Broadcast : SMS_RECEIVED_ACTION
+SmsProvider --> Telephony : part of
+
+' Data flow
+Repository ..> Conversation : produces
+Repository ..> Message : manages
+DataManager ..> Message : creates
+DataManager ..> Conversation : creates
+
+note top of UI : "Jetpack Compose UI\nwith Material Design 3\nReactive updates via StateFlow"
+
+note right of Service : "Bound service providing\nSMS operations with\nlifecycle management"
+
+note bottom of Repository : "Single source of truth\nwith reactive data streams\nand error handling"
+
+note left of DataManager : "Direct Android SMS API\nwith permission validation\nand data transformation"
+
+note bottom of Receiver : "Background SMS monitoring\nwith real-time notifications\nto service layer"
+
+@enduml

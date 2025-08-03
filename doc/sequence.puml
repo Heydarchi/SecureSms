@@ -1,0 +1,102 @@
+@startuml SecureSMS Sequence Diagram
+!theme aws-orange
+
+title SecureSMS - SMS Data Flow Sequence
+
+actor User
+participant MainActivity
+participant SmsServiceConnection
+participant SmsManagerService
+participant SmsManagerBinder
+participant SmsRepository
+participant SmsManager
+participant "Android SMS Provider" as SmsProvider
+participant SmsReceiver
+participant "Android System" as AndroidSystem
+
+== Application Startup ==
+User -> MainActivity : Launch app
+MainActivity -> MainActivity : onCreate()
+MainActivity -> SmsServiceConnection : initialize
+MainActivity -> PermissionUtils : hasSmsPermissions()
+alt Permissions not granted
+    MainActivity -> PermissionUtils : requestSmsPermissions()
+    PermissionUtils -> User : Request SMS permissions
+    User -> MainActivity : Grant permissions (via launcher)
+end
+
+MainActivity -> SmsServiceConnection : bindService()
+SmsServiceConnection -> SmsManagerService : bind request
+SmsManagerService -> SmsManagerService : onCreate()
+SmsManagerService -> SmsManager : initialize(this)
+SmsManagerService -> SmsRepository : initialize(smsManager)
+SmsManagerService -> SmsReceiver : initialize
+SmsManagerService -> SmsManagerBinder : create binder(repository)
+SmsManagerService -> SmsReceiver : setSmsReceivedListener(this)
+
+SmsServiceConnection -> MainActivity : onServiceConnected()
+MainActivity -> SmsManagerBinder : registerSmsListener(this)
+MainActivity -> MainActivity : refreshSmsData()
+
+== Initial Data Load ==
+MainActivity -> SmsServiceConnection : getLatestMessagesFromEachContact()
+SmsServiceConnection -> SmsManagerBinder : getLatestMessagesFromEachContact()
+SmsManagerBinder -> SmsRepository : getAllConversations()
+SmsRepository -> SmsManager : getSmsConversations()
+SmsManager -> SmsProvider : query SMS database
+SmsProvider -> SmsManager : return SMS data
+SmsManager -> SmsRepository : return conversations
+SmsRepository -> SmsManagerBinder : return conversations
+SmsManagerBinder -> SmsServiceConnection : return conversations
+SmsServiceConnection -> MainActivity : return conversations
+MainActivity -> User : Display conversations
+
+== Refresh Data ==
+User -> MainActivity : Pull to refresh
+MainActivity -> SmsServiceConnection : refreshSmsData()
+SmsServiceConnection -> SmsManagerBinder : refreshSmsData()
+SmsManagerBinder -> SmsRepository : refresh()
+SmsRepository -> SmsManager : getAllSmsMessages()
+SmsManager -> SmsProvider : query updated data
+SmsProvider -> SmsManager : return updated SMS data
+SmsManager -> SmsRepository : return messages
+SmsRepository -> SmsManagerBinder : complete refresh
+SmsManagerBinder -> SmsManagerBinder : notifyDataRefreshed()
+SmsManagerBinder -> MainActivity : onSmsDataRefreshed()
+MainActivity -> User : Update UI
+
+== Incoming SMS ==
+AndroidSystem -> SmsReceiver : SMS_RECEIVED_ACTION broadcast
+SmsReceiver -> SmsReceiver : processSmsMessage()
+SmsReceiver -> SmsManagerService : onSmsReceived()
+SmsManagerService -> SmsManagerBinder : notifyNewSmsReceived()
+SmsManagerBinder -> MainActivity : onNewSmsReceived()
+SmsManagerService -> SmsManagerService : refreshSmsData()
+MainActivity -> User : Show new message notification
+
+== View Specific Conversation ==
+User -> MainActivity : Select conversation
+MainActivity -> SmsServiceConnection : getMessagesFromContact(phoneNumber)
+SmsServiceConnection -> SmsManagerBinder : getMessagesFromContact(phoneNumber)
+SmsManagerBinder -> SmsRepository : getMessagesForPhoneNumber(phoneNumber)
+SmsRepository -> SmsManager : getMessagesFromContact(phoneNumber)
+SmsManager -> SmsProvider : query messages for phone number
+SmsProvider -> SmsManager : return specific messages
+SmsManager -> SmsRepository : return filtered messages
+SmsRepository -> SmsManagerBinder : return messages
+SmsManagerBinder -> SmsServiceConnection : return messages
+SmsServiceConnection -> MainActivity : return messages
+MainActivity -> User : Display conversation messages
+
+== Application Shutdown ==
+MainActivity -> SmsServiceConnection : unbindService()
+SmsServiceConnection -> SmsManagerService : unbind request
+SmsManagerService -> SmsManagerService : onDestroy()
+SmsManagerService -> SmsReceiver : setSmsReceivedListener(null)
+SmsManagerService -> SmsManagerService : smsListeners.clear()
+
+note over MainActivity, SmsProvider : All operations are asynchronous using Kotlin Coroutines
+note over SmsRepository : Repository provides reactive streams with StateFlow
+note over SmsManager : Direct access to Android SMS ContentProvider with permission checks
+
+@enduml

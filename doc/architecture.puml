@@ -1,0 +1,227 @@
+@startuml SecureSMS Architecture
+!theme aws-orange
+
+title SecureSMS - Android Application Architecture
+
+package "UI Layer" #lightblue {
+    class MainActivity {
+        - smsServiceConnection: SmsServiceConnection
+        - requestPermissionLauncher: ActivityResultLauncher
+        + onCreate(savedInstanceState: Bundle)
+        + onStart()
+        + onStop()
+        + onNewSmsReceived(phoneNumber: String, message: String, timestamp: Long)
+        + onSmsDataRefreshed()
+        - refreshSmsData()
+        - requestSmsPermissions()
+        - checkAndRequestPermissions()
+    }
+    
+    package "Compose UI" {
+        class "ConversationsList" as ConversationsList
+        class "MessagesList" as MessagesList
+        class "PermissionDialog" as PermissionDialog
+    }
+}
+
+package "Service Layer" #lightgreen {
+    interface ISmsManagerService {
+        + getLatestMessagesFromEachContact(): List<SmsConversation>
+        + getMessagesFromContact(phoneNumber: String): List<SmsMessage>
+        + getConversation(phoneNumber: String): SmsConversation?
+        + refreshSmsData()
+        + registerSmsListener(listener: SmsUpdateListener)
+        + unregisterSmsListener(listener: SmsUpdateListener)
+    }
+    
+    class SmsManagerService {
+        - smsRepository: SmsRepository
+        - smsManager: SmsManager
+        - binder: SmsManagerBinder
+        - serviceScope: CoroutineScope
+        - smsReceiver: SmsReceiver
+        - smsListeners: CopyOnWriteArrayList<SmsUpdateListener>
+        + onCreate()
+        + onBind(intent: Intent): IBinder
+        + onUnbind(intent: Intent?): Boolean
+        + onDestroy()
+        + onSmsReceived(phoneNumber: String, message: String, timestamp: Long)
+        - refreshSmsData()
+        - notifyListeners()
+    }
+    
+    class SmsManagerBinder {
+        - repository: SmsRepository
+        - listeners: CopyOnWriteArrayList<SmsUpdateListener>
+        + getLatestMessagesFromEachContact(): List<SmsConversation>
+        + getMessagesFromContact(phoneNumber: String): List<SmsMessage>
+        + getConversation(phoneNumber: String): SmsConversation?
+        + refreshSmsData()
+        + registerSmsListener(listener: SmsUpdateListener)
+        + unregisterSmsListener(listener: SmsUpdateListener)
+        + notifyNewSmsReceived(phoneNumber: String, message: String, timestamp: Long)
+        + notifyDataRefreshed()
+    }
+    
+    class SmsServiceConnection {
+        - service: ISmsManagerService?
+        - isConnected: Boolean
+        + bindService(context: Context)
+        + unbindService(context: Context)
+        + onServiceConnected(name: ComponentName?, binder: IBinder?)
+        + onServiceDisconnected(name: ComponentName?)
+        + getService(): ISmsManagerService?
+    }
+    
+    interface SmsUpdateListener {
+        + onNewSmsReceived(phoneNumber: String, message: String, timestamp: Long)
+        + onSmsDataRefreshed()
+    }
+}
+
+package "Repository Layer" #lightyellow {
+    class SmsRepository {
+        - smsManager: SmsManager
+        - _conversations: MutableStateFlow<List<SmsConversation>>
+        - _isLoading: MutableStateFlow<Boolean>
+        - _error: MutableStateFlow<String?>
+        + conversations: Flow<List<SmsConversation>>
+        + isLoading: Flow<Boolean>
+        + error: Flow<String?>
+        + loadConversations()
+        + getMessagesForPhoneNumber(phoneNumber: String): List<SmsMessage>
+        + getAllConversations(): List<SmsConversation>
+        + getConversation(phoneNumber: String): SmsConversation?
+        + refresh()
+    }
+}
+
+package "SMS Management Layer" #lightcyan {
+    class SmsManager {
+        - context: Context
+        - TAG: String
+        + hasPermissions(): Boolean
+        + getAllSmsMessages(): List<SmsMessage>
+        + getMessagesFromContact(phoneNumber: String): List<SmsMessage>
+        + getSmsConversations(): List<SmsConversation>
+        + getLatestMessagesFromEachContact(): List<SmsConversation>
+        + normalizePhoneNumber(phoneNumber: String): String
+        - queryAllSmsMessages(): List<SmsMessage>
+        - mapCursorToSmsMessage(cursor: Cursor): SmsMessage
+        - mapSmsTypeFromInt(typeValue: Int): SmsType
+    }
+}
+
+package "Broadcast Receiver Layer" #lightpink {
+    class SmsReceiver {
+        - TAG: String
+        - smsReceivedListener: ISmsReceivedListener?
+        + setSmsReceivedListener(listener: ISmsReceivedListener?)
+        + onReceive(context: Context, intent: Intent)
+        - processSmsMessage(context: Context, smsMessage: SmsMessage)
+    }
+    
+    interface ISmsReceivedListener {
+        + onSmsReceived(phoneNumber: String, message: String, timestamp: Long)
+    }
+}
+
+package "Model Layer" #lightgray {
+    class SmsMessage {
+        + id: Long
+        + phoneNumber: String
+        + message: String
+        + timestamp: Long
+        + type: SmsType
+        + isRead: Boolean
+        + date: Date <<property>>
+        + displayPhoneNumber: String <<property>>
+    }
+    
+    class SmsConversation {
+        + phoneNumber: String
+        + displayName: String?
+        + messages: List<SmsMessage>
+        + lastMessageTimestamp: Long
+        + unreadCount: Int
+        + displayPhoneNumber: String <<property>>
+        + lastMessage: SmsMessage? <<property>>
+        + messageCount: Int <<property>>
+    }
+    
+    enum SmsType {
+        INBOX(1)
+        SENT(2)
+        DRAFT(3)
+        OUTBOX(4)
+        FAILED(5)
+        QUEUED(6)
+        UNKNOWN(0)
+        + fromValue(value: Int): SmsType
+    }
+}
+
+package "Utils Layer" #lightsteelblue {
+    class PermissionUtils {
+        + checkSmsPermissions(context: Context): Boolean
+        + requestSmsPermissions(activity: Activity)
+        + shouldShowRequestPermissionRationale(activity: Activity): Boolean
+        + REQUIRED_SMS_PERMISSIONS: Array<String>
+    }
+}
+
+package "Android System" #mistyrose {
+    class "Android SMS Provider" as SmsProvider
+    class "Android Telephony Manager" as TelephonyManager
+    class "SMS Broadcast" as SmsBroadcast
+}
+
+' Relationships
+MainActivity --> SmsServiceConnection : uses
+MainActivity ..> SmsUpdateListener : implements
+MainActivity --> PermissionUtils : uses
+MainActivity --> ConversationsList : displays
+MainActivity --> MessagesList : displays
+MainActivity --> PermissionDialog : shows
+
+SmsServiceConnection --> ISmsManagerService : connects to
+SmsManagerService --> SmsManagerBinder : creates
+SmsManagerService --> SmsRepository : uses
+SmsManagerService --> SmsReceiver : manages
+SmsManagerService ..> ISmsReceivedListener : implements
+SmsManagerService ..> SmsUpdateListener : notifies
+
+SmsManagerBinder ..> ISmsManagerService : implements
+SmsManagerBinder --> SmsRepository : delegates to
+SmsManagerBinder --> SmsUpdateListener : manages
+
+SmsRepository --> SmsManager : uses
+SmsRepository --> SmsConversation : returns
+SmsRepository --> SmsMessage : manages
+
+SmsManager --> SmsProvider : queries
+SmsManager --> SmsMessage : creates
+SmsManager --> SmsConversation : creates
+SmsManager --> SmsType : uses
+
+SmsReceiver --> ISmsReceivedListener : notifies
+SmsReceiver --> SmsBroadcast : receives from
+
+SmsConversation --> SmsMessage : contains
+SmsMessage --> SmsType : has
+
+' System relationships
+SmsProvider --> TelephonyManager : part of
+SmsBroadcast --> TelephonyManager : from
+
+note right of MainActivity : "Main UI entry point\nHandles permissions\nDisplays conversations"
+
+note right of SmsManagerService : "Core service managing\nSMS operations and\ndata synchronization"
+
+note right of SmsRepository : "Data access layer\nwith reactive streams\nand error handling"
+
+note right of SmsManager : "Direct interface to\nAndroid SMS system\nwith permission checks"
+
+note bottom of SmsReceiver : "Listens for incoming\nSMS broadcasts and\nnotifies service"
+
+@enduml
