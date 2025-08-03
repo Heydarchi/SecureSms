@@ -11,7 +11,7 @@ enum class SmsType(val value: Int) {
 
     companion object {
         fun fromValue(value: Int): SmsType {
-            return values().find { it.value == value } ?: INBOX
+            return values().find { it.value == value } ?: UNKNOWN
         }
     }
 }

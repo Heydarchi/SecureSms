@@ -42,7 +42,8 @@ class SmsRepository internal constructor(private val smsManager: SmsManager) {
      */
     suspend fun getMessagesForPhoneNumber(phoneNumber: String): List<SmsMessage> {
         return try {
-            smsManager.getSmsForPhoneNumber(phoneNumber)
+            val normalizedPhoneNumber = smsManager.normalizePhoneNumber(phoneNumber)
+            smsManager.getAllSmsMessages().filter { smsManager.normalizePhoneNumber(it.phoneNumber) == normalizedPhoneNumber }
         } catch (e: Exception) {
             _error.value = e.message
             emptyList()

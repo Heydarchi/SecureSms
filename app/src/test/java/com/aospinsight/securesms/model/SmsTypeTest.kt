@@ -27,23 +27,24 @@ class SmsTypeTest {
 
     @Test
     fun givenInvalidValues_whenCallingFromValue_thenReturnInboxAsDefault() {
-        assertThat(SmsType.fromValue(0)).isEqualTo(SmsType.INBOX)
-        assertThat(SmsType.fromValue(7)).isEqualTo(SmsType.INBOX)
-        assertThat(SmsType.fromValue(-1)).isEqualTo(SmsType.INBOX)
-        assertThat(SmsType.fromValue(999)).isEqualTo(SmsType.INBOX)
+        assertThat(SmsType.fromValue(0)).isEqualTo(SmsType.UNKNOWN)
+        assertThat(SmsType.fromValue(7)).isEqualTo(SmsType.UNKNOWN)
+        assertThat(SmsType.fromValue(-1)).isEqualTo(SmsType.UNKNOWN)
+        assertThat(SmsType.fromValue(999)).isEqualTo(SmsType.UNKNOWN)
     }
 
     @Test
     fun givenSmsTypeEnum_whenCheckingAllValues_thenReturnAllExpectedValues() {
         val values = SmsType.values()
-        assertThat(values).hasLength(6)
+        assertThat(values).hasLength(7)
         assertThat(values).asList().containsExactly(
             SmsType.INBOX,
             SmsType.SENT,
             SmsType.DRAFT,
             SmsType.OUTBOX,
             SmsType.FAILED,
-            SmsType.QUEUED
+            SmsType.QUEUED,
+            SmsType.UNKNOWN
         )
     }
 }

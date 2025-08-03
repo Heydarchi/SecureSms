@@ -1,8 +1,7 @@
 package com.aospinsight.securesms.repository
 
-import android.content.ContentResolver
-import android.database.Cursor
-import android.provider.Telephony
+import com.aospinsight.securesms.model.SmsConversation
+import com.aospinsight.securesms.model.SmsMessage
 import com.aospinsight.securesms.model.SmsType
 import com.aospinsight.securesms.sms.SmsManager
 import com.google.common.truth.Truth.assertThat
@@ -12,22 +11,18 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SmsRepositoryTest {
 
     private lateinit var mockSmsManager: SmsManager
-    private lateinit var mockContentResolver: ContentResolver
-    private lateinit var mockCursor: Cursor
     private lateinit var smsRepository: SmsRepository
 
     @Before
     fun setup() {
-        mockSmsManager = mockk<SmsManager>()
-        mockContentResolver = mockk()
-        mockCursor = mockk()
-
+        mockSmsManager = mockk<SmsManager>(relaxed = true)
         smsRepository = SmsRepository(mockSmsManager)
     }
 
@@ -36,61 +31,27 @@ class SmsRepositoryTest {
         clearAllMocks()
     }
 
-    private fun setupCursorWithData(messages: List<TestSmsData>) {
-        every { mockCursor.moveToNext() } returnsMany (messages.map { true } + false)
-        every { mockCursor.close() } just Runs
-        
-        val columnIndices = mapOf(
-            Telephony.Sms._ID to 0,
-            Telephony.Sms.ADDRESS to 1,
-            Telephony.Sms.BODY to 2,
-            Telephony.Sms.DATE to 3,
-            Telephony.Sms.TYPE to 4,
-            Telephony.Sms.READ to 5
-        )
-        
-        columnIndices.forEach { (column, index) ->
-            every { mockCursor.getColumnIndexOrThrow(column) } returns index
-        }
 
-        messages.forEachIndexed { index, message ->
-            every { mockCursor.getLong(0) } returnsMany messages.map { it.id }
-            every { mockCursor.getString(1) } returnsMany messages.map { it.phoneNumber }
-            every { mockCursor.getString(2) } returnsMany messages.map { it.body }
-            every { mockCursor.getLong(3) } returnsMany messages.map { it.timestamp }
-            every { mockCursor.getInt(4) } returnsMany messages.map { it.type }
-            every { mockCursor.getInt(5) } returnsMany messages.map { if (it.isRead) 1 else 0 }
-        }
-    }
-
-    private fun setupEmptyCursor() {
-        every { mockCursor.moveToNext() } returns false
-        every { mockCursor.close() } just Runs
-    }
-
-    data class TestSmsData(
-        val id: Long,
-        val phoneNumber: String,
-        val body: String,
-        val timestamp: Long,
-        val type: Int,
-        val isRead: Boolean
-    )
 
     @Test
     fun givenMultipleMessages_whenGetAllConversations_thenReturnConversationsGroupedByPhoneNumber() = runTest {
         // Given
-        val testMessages = listOf(
-            TestSmsData(1L, "+1234567890", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
-            TestSmsData(2L, "+1234567890", "Message 2", 2000L, Telephony.Sms.MESSAGE_TYPE_SENT, true),
-            TestSmsData(3L, "+0987654321", "Message 3", 3000L, Telephony.Sms.MESSAGE_TYPE_INBOX, false)
+        val testMessages : List<SmsConversation> = listOf(
+            SmsConversation("+1234567890", "TestUser-1", listOf(
+                SmsMessage(1, "+1234567890", "Hello", 1L, SmsType.INBOX, true),
+                SmsMessage(2, "+1234567890", "Hi", 1L, SmsType.SENT, true)
+            ), 1000L, 0),
+            SmsConversation("+0987654321", "TestUser-2", listOf(
+                SmsMessage(3, "+0987654321", "Hey there!", 2L, SmsType.INBOX, false)
+            ), 2000L, 1)
         )
-        
-        setupCursorWithData(testMessages)
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+
+
+        coEvery { mockSmsManager.getSmsConversations() } returns testMessages
 
         // When
-        val conversations = smsRepository.getAllConversations()
+        smsRepository.loadConversations()
+        val conversations = smsRepository.conversations.first()
 
         // Then
         assertThat(conversations).hasSize(2)
@@ -109,11 +70,11 @@ class SmsRepositoryTest {
     @Test
     fun givenEmptyCursor_whenGetAllConversations_thenReturnEmptyList() = runTest {
         // Given
-        setupEmptyCursor()
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+        coEvery { mockSmsManager.getSmsConversations() } returns emptyList()
 
         // When
-        val conversations = smsRepository.getAllConversations()
+        smsRepository.loadConversations()
+        val conversations = smsRepository.conversations.first()
 
         // Then
         assertThat(conversations).isEmpty()
@@ -122,27 +83,31 @@ class SmsRepositoryTest {
     @Test
     fun givenNullCursor_whenGetAllConversations_thenHandleGracefullyAndReturnEmpty() = runTest {
         // Given
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns null
+        coEvery { mockSmsManager.getSmsConversations() } throws Exception("Test exception")
 
         // When
-        val conversations = smsRepository.getAllConversations()
+        smsRepository.loadConversations()
+        val conversations = smsRepository.conversations.first()
+        val error = smsRepository.error.first()
 
         // Then
         assertThat(conversations).isEmpty()
+        assertThat(error).isEqualTo("Test exception")
     }
 
     @Test
     fun givenSpecificPhoneNumber_whenGetMessagesForPhoneNumber_thenReturnFilteredMessages() = runTest {
         // Given
         val phoneNumber = "+1234567890"
-        val testMessages = listOf(
-            TestSmsData(1L, phoneNumber, "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
-            TestSmsData(2L, phoneNumber, "Message 2", 2000L, Telephony.Sms.MESSAGE_TYPE_SENT, true),
-            TestSmsData(3L, "+0987654321", "Message 3", 3000L, Telephony.Sms.MESSAGE_TYPE_INBOX, false)
+        val otherPhoneNumber = "+1112223333"
+        val allMessages = listOf(
+            SmsMessage(1, phoneNumber, "Hello", 1L, SmsType.INBOX, true),
+            SmsMessage(2, otherPhoneNumber, "Spam", 2L, SmsType.INBOX, true),
+            SmsMessage(3, phoneNumber, "Hi again", 3L, SmsType.SENT, true)
         )
-        
-        setupCursorWithData(testMessages)
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+        // Simulate normalization by removing the '+'
+        every { mockSmsManager.normalizePhoneNumber(any()) } answers { (firstArg<String>()).replace("+", "") }
+        coEvery { mockSmsManager.getAllSmsMessages() } returns allMessages
 
         // When
         val messages = smsRepository.getMessagesForPhoneNumber(phoneNumber)
@@ -154,17 +119,22 @@ class SmsRepositoryTest {
 
     @Test
     fun givenSpecificPhoneNumber_whenGetConversation_thenReturnConversationForThatNumber() = runTest {
-        // Given
+        // Given a conversation with messages for multiple phone numbers
         val phoneNumber = "+1234567890"
-        val testMessages = listOf(
-            TestSmsData(1L, phoneNumber, "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
-            TestSmsData(2L, phoneNumber, "Message 2", 2000L, Telephony.Sms.MESSAGE_TYPE_SENT, true)
+        val testConversations = listOf(
+            SmsConversation(phoneNumber, "TestUser-1", listOf(
+                SmsMessage(1, phoneNumber, "Hello", 1L, SmsType.INBOX, true),
+                SmsMessage(2, phoneNumber, "Hi", 1L, SmsType.SENT, true)
+            ), 1000L, 0),
+            SmsConversation("+0987654321", "TestUser-2", listOf(
+                SmsMessage(3, "+0987654321", "Hey there!", 2L, SmsType.INBOX, false)
+            ), 2000L, 1)
         )
+        coEvery { mockSmsManager.normalizePhoneNumber(phoneNumber) } returns phoneNumber
+        coEvery { mockSmsManager.getSmsConversations() } returns testConversations
         
-        setupCursorWithData(testMessages)
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
-
         // When
+        smsRepository.loadConversations()
         val conversation = smsRepository.getConversation(phoneNumber)
 
         // Then
@@ -177,10 +147,11 @@ class SmsRepositoryTest {
     fun givenPhoneNumberWithNoMessages_whenGetConversation_thenReturnNull() = runTest {
         // Given
         val phoneNumber = "+1234567890"
-        setupEmptyCursor()
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+        coEvery { mockSmsManager.normalizePhoneNumber(phoneNumber) } returns phoneNumber
+        coEvery { mockSmsManager.getSmsConversations() } returns emptyList()
 
         // When
+        smsRepository.loadConversations()
         val conversation = smsRepository.getConversation(phoneNumber)
 
         // Then
@@ -190,36 +161,38 @@ class SmsRepositoryTest {
     @Test
     fun givenUpdatedData_whenRefresh_thenUpdateConversationsFlow() = runTest {
         // Given
-        val testMessages = listOf(
-            TestSmsData(1L, "+1234567890", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true)
+        val testMessages :  List<SmsConversation> = listOf(
+            SmsConversation("+1234567890", "TestUser-1", listOf(
+                SmsMessage(1,"+1234567890", "Hello", 1L, SmsType.INBOX, true),
+                SmsMessage(2, "+1234567890","Hi", 1L, SmsType.SENT, true)
+            ), 1000L, 0)
         )
-        
-        setupCursorWithData(testMessages)
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+        coEvery { mockSmsManager.getSmsConversations() } returns testMessages
 
         // When
         smsRepository.refresh()
 
         // Then
-        val conversations = smsRepository.getAllConversations()
+        val conversations = smsRepository.conversations.first()
         assertThat(conversations).hasSize(1)
-        assertThat(conversations [0].phoneNumber).isEqualTo("+1234567890")
+        assertThat(conversations[0].phoneNumber).isEqualTo("+1234567890")
     }
 
     @Test
     fun givenInitialEmptyState_whenDataUpdatedAndRefresh_thenConversationsFlowEmitsUpdatedData() = runTest {
         // Given - initial empty state
-        setupEmptyCursor()
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
+        coEvery { mockSmsManager.getSmsConversations() } returns emptyList()
         
         val initialConversations = smsRepository.conversations.first()
         assertThat(initialConversations).isEmpty()
 
         // When - add data and refresh
         val testMessages = listOf(
-            TestSmsData(1L, "+1234567890", "Message 1", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true)
+            SmsConversation("+1234567890", "TestUser-1", listOf(
+                SmsMessage(1, "+1234567890", "Hello", 1L, SmsType.INBOX, true)
+            ), 1000L, 0)
         )
-        setupCursorWithData(testMessages)
+        coEvery { mockSmsManager.getSmsConversations() } returns testMessages
         smsRepository.refresh()
 
         // Then
@@ -227,60 +200,7 @@ class SmsRepositoryTest {
         assertThat(updatedConversations).hasSize(1)
     }
 
-    @Test
-    fun `sms type conversion works correctly`() = runTest {
-        // Given
-        val testMessages = listOf(
-            TestSmsData(1L, "+1234567890", "Inbox", 1000L, Telephony.Sms.MESSAGE_TYPE_INBOX, true),
-            TestSmsData(2L, "+1234567890", "Sent", 2000L, Telephony.Sms.MESSAGE_TYPE_SENT, true),
-            TestSmsData(3L, "+1234567890", "Draft", 3000L, Telephony.Sms.MESSAGE_TYPE_DRAFT, true),
-            TestSmsData(4L, "+1234567890", "Outbox", 4000L, Telephony.Sms.MESSAGE_TYPE_OUTBOX, true),
-            TestSmsData(5L, "+1234567890", "Failed", 5000L, Telephony.Sms.MESSAGE_TYPE_FAILED, true),
-            TestSmsData(6L, "+1234567890", "Queued", 6000L, Telephony.Sms.MESSAGE_TYPE_QUEUED, true),
-            TestSmsData(7L, "+1234567890", "Unknown", 7000L, 999, true) // Unknown type
-        )
-        
-        setupCursorWithData(testMessages)
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
 
-        // When
-        val messages = smsRepository.getMessagesForPhoneNumber("+1234567890")
 
-        // Then
-        assertThat(messages).hasSize(7)
-        assertThat(messages[0].type).isEqualTo(SmsType.INBOX)
-        assertThat(messages[1].type).isEqualTo(SmsType.SENT)
-        assertThat(messages[2].type).isEqualTo(SmsType.DRAFT)
-        assertThat(messages[3].type).isEqualTo(SmsType.OUTBOX)
-        assertThat(messages[4].type).isEqualTo(SmsType.FAILED)
-        assertThat(messages[5].type).isEqualTo(SmsType.QUEUED)
-        assertThat(messages[6].type).isEqualTo(SmsType.UNKNOWN) // Default for unknown type
-    }
 
-    @Test
-    fun `repository handles cursor exceptions gracefully`() = runTest {
-        // Given
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } throws SecurityException("No permission")
-
-        // When
-        val conversations = smsRepository.getAllConversations()
-
-        // Then - should return empty list instead of throwing
-        assertThat(conversations).isEmpty()
-    }
-
-    @Test
-    fun `repository handles cursor reading exceptions gracefully`() = runTest {
-        // Given
-        every { mockContentResolver.query(any(), any(), any(), any(), any()) } returns mockCursor
-        every { mockCursor.moveToNext() } throws IllegalStateException("Cursor error")
-        every { mockCursor.close() } just Runs
-
-        // When
-        val conversations = smsRepository.getAllConversations()
-
-        // Then - should return empty list and close cursor
-        assertThat(conversations).isEmpty()
-        verify { mockCursor.close() }
-    }
 }
