@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.IBinder
 import com.aospinsight.securesms.model.SmsConversation
 import com.aospinsight.securesms.model.SmsMessage
@@ -36,7 +37,15 @@ class SmsServiceIntegrationTest {
         
         smsManagerService = SmsManagerService()
         
-        // Inject mock repository using reflection
+        // Mock permission checks for the service context
+        every { mockContext.checkPermission(any(), any(), any()) } returns PackageManager.PERMISSION_GRANTED
+        
+        // Manually initialize the binder field using reflection to avoid complex service lifecycle
+        val binderField = SmsManagerService::class.java.getDeclaredField("binder")
+        binderField.isAccessible = true
+        binderField.set(smsManagerService, SmsManagerBinder(mockRepository))
+        
+        // Also inject mock repository using reflection
         val repositoryField = SmsManagerService::class.java.getDeclaredField("smsRepository")
         repositoryField.isAccessible = true
         repositoryField.set(smsManagerService, mockRepository)
