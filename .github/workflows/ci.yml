@@ -89,9 +89,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check spelling
-        uses: check-spelling/check-spelling@v0.0.22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          config: config/spelling
-          experimental_apply_changes_via_bot: 1
-          suppress_push_for_open_pull_request: 1
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run spell check
+        run: npm run spell-check

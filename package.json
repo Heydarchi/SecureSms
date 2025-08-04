@@ -1,0 +1,12 @@
+{
+  "name": "securesms-spellcheck",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "spell-check": "cspell \"**/*.{kt,java,xml,md,yml,yaml,json,gradle,kts,txt,properties}\" --config cspell.json",
+    "spell-check-fix": "cspell \"**/*.{kt,java,xml,md,yml,yaml,json,gradle,kts,txt,properties}\" --config cspell.json --no-exit-code"
+  },
+  "devDependencies": {
+    "cspell": "^8.0.0"
+  }
+}
