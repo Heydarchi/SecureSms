@@ -1,0 +1,161 @@
+build:
+  maxIssues: 20
+  weights:
+    # complexity: 2
+    # cognitive-complexity: 2
+    # long-method: 1
+    # large-class: 1
+    # empty-blocks: 1
+
+style:
+  maxIssues: 10
+  MagicNumber:
+    active: false
+  active: true
+  WildcardImport:
+    active: true
+  NoUnusedImports:
+    active: true
+
+comments:
+  active: true
+  CommentOverPrivateFunction:
+    active: false
+  CommentOverPrivateProperty:
+    active: false
+
+# https://detekt.dev/docs/rules/complexity
+complexity:
+  active: true
+  ComplexCondition:
+    threshold: 4
+  LongMethod:
+    threshold: 25
+  LongParameterList:
+    threshold: 6
+  LargeClass:
+    threshold: 150
+  TooManyFunctions:
+    threshold: 15
+
+# https://detekt.dev/docs/rules/coroutines
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+  RedundantSuspendModifier:
+    active: true
+  SleepInsteadOfDelay:
+    active: true
+  SuspendFunWithFlowReturnType:
+    active: true
+
+# https://detekt.dev/docs/rules/empty-blocks
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
+    allowedExceptionNameRegex: "^(ignored|expected).*"
+  EmptyClassBlock:
+    active: true
+  EmptyDefaultConstructor:
+    active: true
+  EmptyDoWhileBlock:
+    active: true
+  EmptyElseBlock:
+    active: true
+  EmptyFinallyBlock:
+    active: true
+  EmptyForBlock:
+    active: true
+  EmptyFunctionBlock:
+    active: true
+  EmptyIfBlock:
+    active: true
+  EmptyInitBlock:
+    active: true
+  EmptySecondaryConstructor:
+    active: true
+  EmptySwitchBlock:
+    active: true
+  EmptyTryBlock:
+    active: true
+  EmptyWhenBlock:
+    active: true
+  EmptyWhileBlock:
+    active: true
+
+# https://detekt.dev/docs/rules/exceptions
+exceptions:
+  active: true
+  ReturnFromFinally:
+    active: true
+  ThrowFromFinally:
+    active: true
+  TooGenericExceptionCaught:
+    active: false # To be enabled in the future
+  TooGenericExceptionThrown:
+    active: false # To be enabled in the future
+
+# https://detekt.dev/docs/rules/naming
+naming:
+  active: true
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+  ConstructorParameterNaming:
+    active: true
+    parameterPattern: '[a-z][A-Za-z0-9]*'
+  EnumNaming:
+    active: true
+    enumEntryPattern: '[A-Z][A-Za-z_]*'
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+  FunctionParameterNaming:
+    active: true
+    parameterPattern: '[a-z][A-Za-z0-9]*'
+  PackageNaming:
+    active: true
+    packagePattern: '[a-z]+(\.[a-z][A-Za-z0-9]*)*'
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][A-Z_0-9]*'
+    propertyPattern: '[a-z][A-Za-z0-9]*'
+    privatePropertyPattern: '_'
+  VariableNaming:
+    active: true
+    variablePattern: '[a-z][A-Za-z0-9]*'
+    privateVariablePattern: '_'
+
+# https://detekt.dev/docs/rules/performance
+performance:
+  active: true
+  ForEachOnRange:
+    active: true
+  SpreadOperator:
+    active: true
+
+# https://detekt.dev/docs/rules/potential-bugs
+potential-bugs:
+  active: true
+  Deprecation:
+    active: true
+  EqualsWithHashCodeExist:
+    active: true
+  ExplicitGarbageCollectionCall:
+    active: true
+  HasPlatformType:
+    active: true
+  UnconditionalJumpStatementInLoop:
+    active: true
+  UnreachableCode:
+    active: true
+  UnsafeCallOnNullableType:
+    active: true
+  UnsafeCast:
+    active: true
+  UselessPostfixExpression:
+    active: true
+  WrongEqualsTypeParameter:
+    active: true

@@ -1,0 +1,12 @@
+# Only check files with these extensions
+*.kt
+*.java
+*.xml
+*.md
+*.yml
+*.yaml
+*.json
+*.gradle
+*.kts
+*.txt
+*.properties
