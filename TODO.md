@@ -1,7 +1,7 @@
 ## Essential features
 - UI
 - Setting
-- SMS encryption
+- SMS encryption/descryption
 - Input Sanitization
 - Credentials and Secret storage
   - Generate
@@ -10,7 +10,7 @@
 - Access control
   - Biometric
   - Code
-  - PAssword
+  - Password
 - Improve CI
   - ktlinit
   - Detekt

@@ -42,9 +42,36 @@ class PermissionUtils {
         
         /**
          * Request SMS permissions using deprecated method (kept for compatibility)
+         * 
+         * @deprecated Use requestSmsPermissions(activity: Activity, launcher: ActivityResultLauncher<Array<String>>) instead.
+         * 
+         * Migration example:
+         * ```
+         * // Old way:
+         * PermissionUtils.requestSmsPermissions(activity)
+         * 
+         * // New way:
+         * val launcher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+         *     // Handle permission results
+         * }
+         * PermissionUtils.requestSmsPermissions(activity, launcher)
+         * ```
          */
-        @Deprecated("Use requestSmsPermissions with ActivityResultLauncher instead")
+        @Deprecated(
+            message = "Use requestSmsPermissions with ActivityResultLauncher instead",
+            replaceWith = ReplaceWith(
+                "requestSmsPermissions(activity, launcher)",
+                "androidx.activity.result.contract.ActivityResultContracts"
+            ),
+            level = DeprecationLevel.WARNING
+        )
+        @JvmStatic
         fun requestSmsPermissions(activity: Activity) {
+            // Check if permissions are already granted to avoid unnecessary requests
+            if (hasSmsPermissions(activity)) {
+                return
+            }
+            
             ActivityCompat.requestPermissions(
                 activity,
                 SMS_PERMISSIONS,
