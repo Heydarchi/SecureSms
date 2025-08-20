@@ -1,0 +1,58 @@
+@startuml
+!theme cerulean-outline
+
+title SecureSms Component Diagram
+
+
+actor User
+
+package "SecureSms Application" {
+
+    component "SmsActivity" as Activity {
+        boundary UI
+        component "Sms ViewModel" as ViewModel
+        interface "ActivityAIDL" as ActivityInterface
+    }
+
+    component "SmsService" as Service {
+        interface "ServiceAIDL" as ServiceInterface
+        component "SMS Repo" as Repo
+        component "SMS Manager" as Manager
+        component "Sms BroadcastReceiver" as Receiver
+    }
+    component "Crypto Lib"
+    component "KeyStore Lib"
+
+}
+
+User --down-> UI
+
+database "Android SMS\nContentProvider" as SmsProvider
+artifact "Sms Broadcast Intent" as SmsIntent
+
+' --- Relationships ---
+
+' Activity Internal
+UI -down-> ViewModel
+ViewModel -up-> UI
+ViewModel .> ActivityInterface
+
+' Service Internal
+ServiceInterface --> Manager
+ServiceInterface --right-> Repo
+Manager --right-> Repo
+Receiver --up-> Manager
+
+' Activity <-> Service
+UI ..> ServiceInterface
+Manager ..left.> ActivityInterface
+
+' Service -> External
+Manager ..left. "Crypto Lib" : uses
+Manager ..left. "KeyStore Lib" : uses
+Manager <-down-> SmsProvider
+
+' System -> Service
+SmsIntent --right-> Receiver
+
+@enduml
