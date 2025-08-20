@@ -5,7 +5,7 @@ We are aiming to develop an open source Android Sms application helping to secur
 
 
 ## Phase 1
-We will complete the basic functionalities of a Sms manager application
+We will complete the basic functionalities of a SMS manager application
 
 ## Phase 2
 Generating, sharing and storing encryption and signing keys and also sms encryption
@@ -24,10 +24,12 @@ Generating, sharing and storing encryption and signing keys and also sms encrypt
 
 ### Core Components
 
-We are going to implement the below structure which show the big picture of the application component leve
+We are going to implement the below structure which shows the big picture of the application component level
 
 ![SecureSMS application component level diagram](./component-level.png)
 
+```plantuml
+!include ./component-level.puml
 
 1. **SmsReceiver** - BroadcastReceiver for incoming SMS
 2. **SmsManager** - Main class for SMS operations
